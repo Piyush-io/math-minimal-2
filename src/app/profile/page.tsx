@@ -105,7 +105,7 @@ export default function ProfilePage() {
     };
     
     fetchUserStats();
-  }, [user]);
+  }, [user, setStats]);
   
   const calculatePercentage = (correct: number, total: number) => {
     return total > 0 ? Math.round((correct / total) * 100) : 0;

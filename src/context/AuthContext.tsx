@@ -8,7 +8,6 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
-  User as FirebaseUser
 } from "firebase/auth";
 import { doc, setDoc, getDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "@/config/firebase";
@@ -184,4 +183,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-} 
+}

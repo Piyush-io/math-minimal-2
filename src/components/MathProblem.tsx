@@ -68,7 +68,7 @@ export default function MathProblem({ difficulty, onCorrectAnswer }: MathProblem
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [difficulty]);
+  }, [difficulty, generateProblem]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

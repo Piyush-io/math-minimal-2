@@ -6,7 +6,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 
 export default function SettingsPage() {
-  const { user, loading: authLoading, updateUser } = useAuth();
+  const { loading: authLoading, updateUser, user } = useAuth();
   
   const [settings, setSettings] = useState({
     username: user?.name || "",
@@ -58,7 +58,7 @@ export default function SettingsPage() {
         text: "Settings updated successfully",
         type: "success"
       });
-    } catch (error) {
+    } catch (_error) {
       setMessage({
         text: "Failed to update settings",
         type: "error"

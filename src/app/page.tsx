@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import DifficultySelector from "@/components/DifficultySelector";
 import TimeSelector from "@/components/TimeSelector";
@@ -16,17 +15,7 @@ import { db } from '@/config/firebase';
 // Define the allowed time values
 type Time = 15 | 30 | 45 | 60;
 
-// This function is no longer used as we're saving directly to Firestore
-// Keeping it commented for reference
-/*
-const saveScore = async (userId: string, score: number, difficulty: string, time: number) => {
-  await new Promise(resolve => setTimeout(resolve, 500));
-  return true;
-};
-*/
-
 export default function Home() {
-  const router = useRouter();
   const { user } = useAuth();
   const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">("MEDIUM");
   const [time, setTime] = useState<Time>(30);
