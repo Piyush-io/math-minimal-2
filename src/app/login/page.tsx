@@ -48,13 +48,14 @@ export default function LoginPage() {
       <div className="w-1/2 h-screen flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
           <div className="text-white text-[120px] font-bold leading-none relative">
-          <div className="flex justify-center mb-4">
-              <img
-                src="/frame.png"
+            <div className="flex justify-center mb-4">
+              <Image
+                src="/Frame.png"
                 alt="Scribbles"
                 width={500}
                 height={500}
                 style={{ objectFit: "contain" }}
+                priority
               />
             </div>
             <div>
