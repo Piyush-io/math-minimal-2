@@ -1,10 +1,9 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
-import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 
 interface Game {
@@ -12,19 +11,6 @@ interface Game {
   difficulty: string;
   time: number;
   date: string;
-}
-
-interface UserData {
-  stats: {
-    highestScore: number;
-    byDifficulty: {
-      [key: string]: {
-        avgScore: number;
-      };
-    };
-    recentActivity: Game[];
-  };
-  name: string;
 }
 
 interface LeaderboardEntry {
@@ -107,7 +93,7 @@ export default function LeaderboardPage() {
         // Apply time range filter on the server side
         if (filter.timeRange !== "ALL") {
           const now = new Date();
-          let cutoffDate = new Date();
+          const cutoffDate = new Date();
           
           switch(filter.timeRange) {
             case "WEEK":

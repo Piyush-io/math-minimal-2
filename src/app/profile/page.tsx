@@ -134,7 +134,7 @@ export default function ProfilePage() {
     // Filter by time range
     if (chartFilter.timeRange !== "ALL") {
       const now = new Date();
-      let cutoffDate = new Date();
+      const cutoffDate = new Date();
       
       switch(chartFilter.timeRange) {
         case "WEEK":
@@ -321,18 +321,22 @@ export default function ProfilePage() {
                     <div className="col-span-2 swiss-card flex flex-col">
                       <h2 className="swiss-heading mb-8">Recent</h2>
                       <div className="space-y-6">
-                        {stats.recentActivity.slice(0, 3).map((activity, index) => (
-                          <div key={index} className="swiss-card bg-black/50">
-                            <div className="flex justify-between items-center">
-                              <div className="swiss-label">{activity.date}</div>
-                              <div className="text-2xl font-bold">{activity.score}</div>
+                        {stats.recentActivity.length > 0 ? (
+                          stats.recentActivity.slice(0, 3).map((activity, index) => (
+                            <div key={index} className="swiss-card bg-black/50">
+                              <div className="flex justify-between items-center">
+                                <div className="swiss-label">{activity.date}</div>
+                                <div className="text-2xl font-bold">{activity.score}</div>
+                              </div>
+                              <div className="flex justify-between items-center mt-2">
+                                <div className="text-white/60">{activity.difficulty}</div>
+                                <div className="text-white/60">{activity.time}s</div>
+                              </div>
                             </div>
-                            <div className="flex justify-between items-center mt-2">
-                              <div className="text-white/60">{activity.difficulty}</div>
-                              <div className="text-white/60">{activity.time}s</div>
-                            </div>
-                          </div>
-                        ))}
+                          ))
+                        ) : (
+                          <div className="text-sm text-white/60">Don&apos;t worry if you haven&apos;t played many games yet!</div>
+                        )}
                       </div>
                     </div>
                   </div>

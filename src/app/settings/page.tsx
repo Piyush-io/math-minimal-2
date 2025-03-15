@@ -58,7 +58,7 @@ export default function SettingsPage() {
         text: "Settings updated successfully",
         type: "success"
       });
-    } catch (_error) {
+    } catch (error) {
       setMessage({
         text: "Failed to update settings",
         type: "error"

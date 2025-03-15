@@ -1,6 +1,5 @@
 "use client";
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 
 interface MathProblemProps {
@@ -18,57 +17,59 @@ export default function MathProblem({ difficulty, onCorrectAnswer }: MathProblem
   const [isCorrect, setIsCorrect] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const generateProblem = () => {
-    let n1 = 0, n2 = 0, op: "+" | "*" = "+";
-    
-    // Generate numbers based on difficulty, ensuring positive results
-    switch (difficulty) {
-      case "EASY":
-        n1 = Math.floor(Math.random() * 10) + 1; // 1-10
-        n2 = Math.floor(Math.random() * 10) + 1; // 1-10
-        op = "+";
-        break;
-      case "MEDIUM":
-        if (Math.random() < 0.5) {
-          n1 = Math.floor(Math.random() * 20) + 10; // 10-29
-          n2 = Math.floor(Math.random() * 20) + 1; // 1-20
-          op = "+";
-        } else {
-          n1 = Math.floor(Math.random() * 5) + 1; // 1-5
-          n2 = Math.floor(Math.random() * 5) + 1; // 1-5
-          op = "*";
-        }
-        break;
-      case "HARD":
-        if (Math.random() < 0.5) {
-          n1 = Math.floor(Math.random() * 50) + 20; // 20-69
-          n2 = Math.floor(Math.random() * 30) + 5; // 5-34
-          op = "+";
-        } else {
-          n1 = Math.floor(Math.random() * 7) + 2; // 2-8
-          n2 = Math.floor(Math.random() * 7) + 2; // 2-8
-          op = "*";
-        }
-        break;
-    }
-    
-    setNum1(n1);
-    setNum2(n2);
-    setOperator(op);
-    
-    // Calculate correct answer
-    const answer = op === "+" ? n1 + n2 : n1 * n2;
-    setCorrectAnswer(answer);
-    setUserAnswer("");
-    setIsCorrect(false);
-  };
+  // First, wrap the generateProblem function with useCallback
+const generateProblem = useCallback(() => {
+  let n1 = 0, n2 = 0, op: "+" | "*" = "+";
   
-  useEffect(() => {
-    generateProblem();
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [difficulty, generateProblem]);
+  // Generate numbers based on difficulty, ensuring positive results
+  switch (difficulty) {
+    case "EASY":
+      n1 = Math.floor(Math.random() * 10) + 1; // 1-10
+      n2 = Math.floor(Math.random() * 10) + 1; // 1-10
+      op = "+";
+      break;
+    case "MEDIUM":
+      if (Math.random() < 0.5) {
+        n1 = Math.floor(Math.random() * 20) + 10; // 10-29
+        n2 = Math.floor(Math.random() * 20) + 1; // 1-20
+        op = "+";
+      } else {
+        n1 = Math.floor(Math.random() * 5) + 1; // 1-5
+        n2 = Math.floor(Math.random() * 5) + 1; // 1-5
+        op = "*";
+      }
+      break;
+    case "HARD":
+      if (Math.random() < 0.5) {
+        n1 = Math.floor(Math.random() * 50) + 20; // 20-69
+        n2 = Math.floor(Math.random() * 30) + 5; // 5-34
+        op = "+";
+      } else {
+        n1 = Math.floor(Math.random() * 7) + 2; // 2-8
+        n2 = Math.floor(Math.random() * 7) + 2; // 2-8
+        op = "*";
+      }
+      break;
+  }
+  
+  setNum1(n1);
+  setNum2(n2);
+  setOperator(op);
+  
+  // Calculate correct answer
+  const answer = op === "+" ? n1 + n2 : n1 * n2;
+  setCorrectAnswer(answer);
+  setUserAnswer("");
+  setIsCorrect(false);
+}, [difficulty]); // Only include difficulty as a dependency
+
+// Then, modify the useEffect to use the memoized function
+useEffect(() => {
+  generateProblem();
+  if (inputRef.current) {
+    inputRef.current.focus();
+  }
+}, [difficulty, generateProblem]); // Now generateProblem is stable between renders
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;

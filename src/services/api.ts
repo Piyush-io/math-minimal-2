@@ -111,7 +111,7 @@ export const api = {
     timeRange?: 'WEEK' | 'MONTH' | 'YEAR' | 'ALL';
     limit?: number;
   } = {}) {
-    const { difficulty, timeRange = 'ALL', limit: limitCount = 50 } = options;
+    const { difficulty, limit: limitCount = 50 } = options;
     
     let q = query(
       collection(db, 'users'),
@@ -144,4 +144,4 @@ export const api = {
       };
     });
   }
-}; 
+};
