@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 
 interface MathProblemProps {
   difficulty: "EASY" | "MEDIUM" | "HARD";
-  onCorrectAnswer: () => void;
+  onCorrectAnswer: (operationType: "addition" | "multiplication", isCorrect: boolean, totalAttempts: number) => void;
 }
 
 export default function MathProblem({ difficulty, onCorrectAnswer }: MathProblemProps) {
@@ -77,21 +77,28 @@ export default function MathProblem({ difficulty, onCorrectAnswer }: MathProblem
     if (/^\d*$/.test(value)) {
       setUserAnswer(value);
       
-      // Check answer after a short delay
-      if (value !== "") {
+      // Check answer immediately when length matches
+      if (value !== "" && value.length >= correctAnswer.toString().length) {
         const answer = parseInt(value);
         if (answer === correctAnswer) {
           setIsCorrect(true);
           setTimeout(() => {
-            onCorrectAnswer();
+            onCorrectAnswer(operator === "+" ? "addition" : "multiplication", true, 1);
             generateProblem();
             if (inputRef.current) {
               inputRef.current.focus();
             }
-          }, 300); // Short delay for visual feedback
-        } else if (value.length >= correctAnswer.toString().length) {
+          }, 300);
+        } else {
           setIsShaking(true);
-          setTimeout(() => setIsShaking(false), 500);
+          setTimeout(() => {
+            setIsShaking(false);
+            onCorrectAnswer(operator === "+" ? "addition" : "multiplication", false, 1);
+            generateProblem();
+            if (inputRef.current) {
+              inputRef.current.focus();
+            }
+          }, 500);
         }
       }
     }
@@ -105,7 +112,7 @@ export default function MathProblem({ difficulty, onCorrectAnswer }: MathProblem
       if (answer === correctAnswer) {
         setIsCorrect(true);
         setTimeout(() => {
-          onCorrectAnswer();
+          onCorrectAnswer(operator === "+" ? "addition" : "multiplication", true, 1);
           generateProblem();
           if (inputRef.current) {
             inputRef.current.focus();
@@ -113,7 +120,14 @@ export default function MathProblem({ difficulty, onCorrectAnswer }: MathProblem
         }, 300);
       } else {
         setIsShaking(true);
-        setTimeout(() => setIsShaking(false), 500);
+        setTimeout(() => {
+          setIsShaking(false);
+          onCorrectAnswer(operator === "+" ? "addition" : "multiplication", false, 1);
+          generateProblem();
+          if (inputRef.current) {
+            inputRef.current.focus();
+          }
+        }, 500);
       }
     }
   };

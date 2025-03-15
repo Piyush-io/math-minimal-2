@@ -14,6 +14,19 @@ interface Game {
   date: string;
 }
 
+interface UserData {
+  stats: {
+    highestScore: number;
+    byDifficulty: {
+      [key: string]: {
+        avgScore: number;
+      };
+    };
+    recentActivity: Game[];
+  };
+  name: string;
+}
+
 interface LeaderboardEntry {
   id: string;
   name: string;
@@ -35,6 +48,7 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
+        setLoading(true);
         let q = query(
           collection(db, 'users'),
           orderBy('stats.highestScore', 'desc'),
@@ -45,36 +59,73 @@ export default function LeaderboardPage() {
           const difficultyPath = `stats.byDifficulty.${filter.difficulty.toLowerCase()}`;
           q = query(
             collection(db, 'users'),
-            where(`${difficultyPath}.total`, '>', 0),
             orderBy(`${difficultyPath}.avgScore`, 'desc'),
             limit(50)
           );
         }
 
         const snapshot = await getDocs(q);
-        const leaderboardData = snapshot.docs.map(doc => {
+        let leaderboardData = snapshot.docs.map(doc => {
           const data = doc.data();
-          const diffStats = filter.difficulty !== 'ALL' 
-            ? data.stats.byDifficulty[filter.difficulty.toLowerCase()]
+          
+          // Handle potential missing data
+          if (!data.stats || !data.name) {
+            return null;
+          }
+          
+          const difficultyLower = filter.difficulty.toLowerCase();
+          const diffStats = filter.difficulty !== 'ALL' && data.stats.byDifficulty && data.stats.byDifficulty[difficultyLower]
+            ? data.stats.byDifficulty[difficultyLower]
             : null;
-          const recentGame = data.stats.recentActivity.find(game => 
+            
+          // Find a recent game with the matching difficulty
+          const recentGames = Array.isArray(data.stats.recentActivity) ? data.stats.recentActivity : [];
+          const recentGame = recentGames.find((game: Game) => 
             filter.difficulty === 'ALL' || game.difficulty === filter.difficulty
-          ) || {
-            score: diffStats?.avgScore || data.stats.highestScore,
+          );
+          
+          // Default game data if no matching game found
+          const gameData = recentGame || {
+            score: diffStats?.avgScore || data.stats.highestScore || 0,
             difficulty: filter.difficulty !== 'ALL' ? filter.difficulty : 'UNKNOWN',
             time: 0,
-            date: data.updatedAt.toDate().toISOString().split('T')[0]
+            date: data.updatedAt ? data.updatedAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
           };
 
           return {
             id: doc.id,
             name: data.name,
-            score: filter.difficulty !== 'ALL' ? diffStats.avgScore : data.stats.highestScore,
-            difficulty: recentGame.difficulty,
-            time: recentGame.time,
-            date: recentGame.date
+            score: filter.difficulty !== 'ALL' && diffStats ? diffStats.avgScore : (data.stats.highestScore || 0),
+            difficulty: gameData.difficulty,
+            time: gameData.time,
+            date: gameData.date
           };
-        });
+        })
+        // Filter out null values and explicitly cast to LeaderboardEntry[] to satisfy TypeScript
+        .filter((entry): entry is LeaderboardEntry => entry !== null);
+
+        // Apply time range filter on the server side
+        if (filter.timeRange !== "ALL") {
+          const now = new Date();
+          let cutoffDate = new Date();
+          
+          switch(filter.timeRange) {
+            case "WEEK":
+              cutoffDate.setDate(now.getDate() - 7);
+              break;
+            case "MONTH":
+              cutoffDate.setMonth(now.getMonth() - 1);
+              break;
+            case "YEAR":
+              cutoffDate.setFullYear(now.getFullYear() - 1);
+              break;
+          }
+          
+          leaderboardData = leaderboardData.filter(entry => {
+            const entryDate = new Date(entry.date);
+            return entryDate >= cutoffDate;
+          });
+        }
 
         setLeaderboard(leaderboardData);
       } catch (error) {
@@ -85,16 +136,10 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-  }, [filter.difficulty]);
+  }, [filter.difficulty, filter.timeRange]);
   
-  const filteredLeaderboard = leaderboard.filter(entry => {
-    if (filter.difficulty !== "ALL" && entry.difficulty !== filter.difficulty) {
-      return false;
-    }
-    
-    // In a real app, you would filter by date range
-    return true;
-  });
+  // Define filteredLeaderboard from the leaderboard state
+  const filteredLeaderboard = leaderboard;
   
   const topThree = filteredLeaderboard.slice(0, 3);
   const restOfLeaderboard = filteredLeaderboard.slice(3);
@@ -218,7 +263,7 @@ export default function LeaderboardPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {restOfLeaderboard.map((entry, index) => (
+                          {restOfLeaderboard.map((entry: LeaderboardEntry, index: number) => (
                             <tr 
                               key={entry.id} 
                               className={`border-b border-white/5 ${user?.name === entry.name ? 'bg-white/5' : ''}`}

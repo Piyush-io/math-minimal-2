@@ -9,12 +9,23 @@ export default function SettingsPage() {
   const { user, loading: authLoading, updateUser } = useAuth();
   
   const [settings, setSettings] = useState({
-    username: "",
-    email: "",
+    username: user?.name || "",
+    email: user?.email || "",
     notifications: true,
     darkMode: true,
     soundEffects: true
   });
+  
+  // Update settings when user data changes
+  useEffect(() => {
+    if (user) {
+      setSettings(prevSettings => ({
+        ...prevSettings,
+        username: user.name || "",
+        email: user.email || ""
+      }));
+    }
+  }, [user]);
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });

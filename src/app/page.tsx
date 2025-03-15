@@ -16,13 +16,14 @@ import { db } from '@/config/firebase';
 // Define the allowed time values
 type Time = 15 | 30 | 45 | 60;
 
-// Mock data service - in a real app, this would be API calls
+// This function is no longer used as we're saving directly to Firestore
+// Keeping it commented for reference
+/*
 const saveScore = async (userId: string, score: number, difficulty: string, time: number) => {
-  // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 500));
-  console.log("Score saved:", { userId, score, difficulty, time });
   return true;
 };
+*/
 
 export default function Home() {
   const router = useRouter();
@@ -46,11 +47,19 @@ export default function Home() {
     }
   };
   
-  const handleCorrectAnswer = () => {
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  
+  const [totalAttempts, setTotalAttempts] = useState(0);
+  
+  const handleCorrectAnswer = (operationType: "addition" | "multiplication", isCorrect: boolean, attempts: number = 1) => {
     if (!isPlaying) {
       setIsPlaying(true);
     }
-    setScore(prevScore => prevScore + 1);
+    setTotalAttempts(prev => prev + attempts);
+    if (isCorrect) {
+      setScore(prevScore => prevScore + 1);
+      setTotalCorrect(prev => prev + 1);
+    }
   };
   
   const handleTimerComplete = async () => {
@@ -76,12 +85,18 @@ export default function Home() {
         const stats = userData.stats || {
           totalGames: 0,
           totalScore: 0,
+          totalCorrect: 0,
           averageScore: 0,
           highestScore: 0,
+          totalTimePlayed: 0,
           byDifficulty: {
             easy: { total: 0, avgScore: 0 },
             medium: { total: 0, avgScore: 0 },
             hard: { total: 0, avgScore: 0 }
+          },
+          byOperation: {
+            addition: { correct: 0, total: 0 },
+            multiplication: { correct: 0, total: 0 }
           },
           recentActivity: [],
           scoreHistory: []
@@ -90,6 +105,8 @@ export default function Home() {
         // Update general stats
         stats.totalGames += 1;
         stats.totalScore += score;
+        stats.totalCorrect += totalCorrect;
+        stats.totalTimePlayed += time;
         stats.averageScore = Math.round(stats.totalScore / stats.totalGames);
         stats.highestScore = Math.max(stats.highestScore, score);
         

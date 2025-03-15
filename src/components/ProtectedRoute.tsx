@@ -16,8 +16,11 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="flex flex-col items-center">
+          <div className="w-16 h-16 border-t-4 border-[rgb(var(--primary))] border-solid rounded-full animate-spin mb-4"></div>
+          <div className="text-2xl text-white/60">Loading...</div>
+        </div>
       </div>
     );
   }
@@ -27,4 +30,4 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   return <>{children}</>;
-} 
+}
