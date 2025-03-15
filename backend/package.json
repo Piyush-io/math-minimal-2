@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "firestore": "^1.1.6",
+    "force": "^0.0.3"
+  }
+}

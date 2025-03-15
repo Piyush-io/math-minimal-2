@@ -1,103 +1,214 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
+import DifficultySelector from "@/components/DifficultySelector";
+import TimeSelector from "@/components/TimeSelector";
+import MathProblem from "@/components/MathProblem";
+import ScoreDisplay from "@/components/ScoreDisplay";
+import Timer from "@/components/Timer";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/config/firebase';
+
+// Define the allowed time values
+type Time = 15 | 30 | 45 | 60;
+
+// Mock data service - in a real app, this would be API calls
+const saveScore = async (userId: string, score: number, difficulty: string, time: number) => {
+  // Simulate API call
+  await new Promise(resolve => setTimeout(resolve, 500));
+  console.log("Score saved:", { userId, score, difficulty, time });
+  return true;
+};
 
 export default function Home() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const [difficulty, setDifficulty] = useState<"EASY" | "MEDIUM" | "HARD">("MEDIUM");
+  const [time, setTime] = useState<Time>(30);
+  const [score, setScore] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const handleDifficultyChange = (newDifficulty: "EASY" | "MEDIUM" | "HARD") => {
+    if (!isPlaying) {
+      setDifficulty(newDifficulty);
+    }
+  };
+  
+  const handleTimeChange = (newTime: Time) => {
+    if (!isPlaying) {
+      setTime(newTime);
+    }
+  };
+  
+  const handleCorrectAnswer = () => {
+    if (!isPlaying) {
+      setIsPlaying(true);
+    }
+    setScore(prevScore => prevScore + 1);
+  };
+  
+  const handleTimerComplete = async () => {
+    setIsPlaying(false);
+    setGameOver(true);
+    setIsSaving(true);
+    
+    try {
+      if (user) {
+        const userRef = doc(db, 'users', user.id);
+        const userDoc = await getDoc(userRef);
+        const userData = userDoc.exists() ? userDoc.data() : {};
+        
+        const now = new Date();
+        const gameData = {
+          score,
+          difficulty,
+          time,
+          date: now.toISOString().split('T')[0]
+        };
+        
+        // Update user statistics
+        const stats = userData.stats || {
+          totalGames: 0,
+          totalScore: 0,
+          averageScore: 0,
+          highestScore: 0,
+          byDifficulty: {
+            easy: { total: 0, avgScore: 0 },
+            medium: { total: 0, avgScore: 0 },
+            hard: { total: 0, avgScore: 0 }
+          },
+          recentActivity: [],
+          scoreHistory: []
+        };
+        
+        // Update general stats
+        stats.totalGames += 1;
+        stats.totalScore += score;
+        stats.averageScore = Math.round(stats.totalScore / stats.totalGames);
+        stats.highestScore = Math.max(stats.highestScore, score);
+        
+        // Update difficulty stats
+        const diffStats = stats.byDifficulty[difficulty.toLowerCase()];
+        diffStats.total += 1;
+        diffStats.avgScore = Math.round((diffStats.avgScore * (diffStats.total - 1) + score) / diffStats.total);
+        
+        // Update recent activity and score history
+        stats.recentActivity = [gameData, ...(stats.recentActivity || [])].slice(0, 10);
+        stats.scoreHistory = [...(stats.scoreHistory || []), { date: gameData.date, score }];
+        
+        // Save to Firestore
+        await updateDoc(userRef, { stats });
+      }
+    } catch (error) {
+      console.error('Error saving game stats:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const resetGame = () => {
+    setGameOver(false);
+    setScore(0);
+    setIsPlaying(false);
+  };
+  
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+    <ProtectedRoute>
+      <div className="min-h-screen flex flex-col bg-black text-white">
+        <Navbar />
+        
+        <main className="flex-1 flex items-start justify-center py-8">
+          <div className="swiss-container max-w-7xl py-6">
+            {gameOver ? (
+              <div className="max-w-2xl mx-auto">
+                <div className="mb-12 text-center">
+                  <h1 className="swiss-title mb-6">CHALLENGE COMPLETE</h1>
+                  <div className="swiss-divider mx-auto mb-12"></div>
+                  
+                  <div className="mb-16">
+                    <ScoreDisplay score={score} />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-12 mb-12">
+                    <div className="swiss-card p-8">
+                      <div className="swiss-label mb-4">Difficulty</div>
+                      <div className="text-4xl font-bold">{difficulty}</div>
+                    </div>
+                    
+                    <div className="swiss-card p-8">
+                      <div className="swiss-label mb-4">Time</div>
+                      <div className="text-4xl font-bold">{time}s</div>
+                    </div>
+                  </div>
+                  
+                  {isSaving ? (
+                    <div className="text-white/60 text-xl">Saving results...</div>
+                  ) : (
+                    <button
+                      onClick={resetGame}
+                      className="swiss-btn w-full max-w-md mx-auto py-4 text-lg"
+                    >
+                      New Challenge
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="swiss-grid h-[calc(100vh-240px)] items-center">
+                <div className="md:col-span-3 h-full flex flex-col justify-center">
+                  <div className="mb-16">
+                    <h2 className="swiss-label mb-8">Difficulty</h2>
+                    <DifficultySelector 
+                      onSelect={handleDifficultyChange} 
+                      defaultDifficulty={difficulty} 
+                    />
+                  </div>
+                  
+                  <div>
+                    <h2 className="swiss-label mb-8">Time (seconds)</h2>
+                    <TimeSelector 
+                      onSelect={handleTimeChange} 
+                      defaultTime={time} 
+                    />
+                  </div>
+                </div>
+                
+                <div className="md:col-span-6 flex flex-col items-center justify-center h-full">
+                  <MathProblem 
+                    difficulty={difficulty} 
+                    onCorrectAnswer={handleCorrectAnswer} 
+                  />
+                </div>
+                
+                <div className="md:col-span-3 h-full flex flex-col justify-between">
+                  <div className="flex justify-end">
+                    {isPlaying ? (
+                      <Timer 
+                        duration={time} 
+                        onComplete={handleTimerComplete} 
+                      />
+                    ) : (
+                      <div className="swiss-label text-right">
+                        Enter any answer to start
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex justify-end mt-auto">
+                    <ScoreDisplay score={score} />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }
