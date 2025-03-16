@@ -16,8 +16,10 @@ const eslintConfig = [
       'react/no-unescaped-entities': 'off',
       '@typescript-eslint/no-unused-vars': ['warn', {
         'argsIgnorePattern': '^_',
-        'varsIgnorePattern': '^_'
+        'varsIgnorePattern': '^_',
+        'ignoreRestSiblings': true
       }],
+      '@typescript-eslint/no-explicit-any': 'off',
       'next/no-img-element': 'off'
     }
   }

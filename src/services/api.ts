@@ -1,18 +1,66 @@
 import { doc, getDoc, setDoc, updateDoc, collection, query, orderBy, limit, where, getDocs } from 'firebase/firestore';
 import { db } from '@/config/firebase';
 
+interface GameActivity {
+  score: number;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  time: number;
+  date: string;
+}
+
+interface UserStats {
+  totalGames: number;
+  totalScore: number;
+  averageScore: number;
+  highestScore: number;
+  byOperation: {
+    addition: { total: number; correct: number };
+    multiplication: { total: number; correct: number };
+  };
+  byDifficulty: {
+    easy: { total: number; correct: number; avgScore: number };
+    medium: { total: number; correct: number; avgScore: number };
+    hard: { total: number; correct: number; avgScore: number };
+  };
+  scoreHistory: Array<{ score: number; date: string }>;
+  recentActivity: GameActivity[];
+}
+
+interface UserData {
+  name: string;
+  email: string;
+  createdAt: Date;
+  updatedAt: Date;
+  stats: UserStats;
+  settings: {
+    theme: string;
+    sound: boolean;
+    notifications: boolean;
+  };
+}
+
+interface LeaderboardEntry {
+  id: string;
+  name: string;
+  score: number;
+  highestScore: number;
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD' | 'ALL';
+  time: number;
+  date: string;
+}
+
 export const api = {
   async getUser(id: string) {
     const docRef = doc(db, 'users', id);
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) throw new Error('User not found');
-    return { id: docSnap.id, ...docSnap.data() };
+    return { id: docSnap.id, ...docSnap.data() } as UserData & { id: string };
   },
 
   async createUser(userData: { name: string; email: string }) {
     const userRef = doc(collection(db, 'users'));
     
-    const user = {
+    const user: UserData = {
       ...userData,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -54,7 +102,7 @@ export const api = {
     const userDoc = await getDoc(userRef);
     if (!userDoc.exists()) throw new Error('User not found');
 
-    const userData = userDoc.data();
+    const userData = userDoc.data() as UserData;
     const stats = { ...userData.stats };
     const now = new Date();
     const dateStr = now.toISOString().split('T')[0];
@@ -90,7 +138,7 @@ export const api = {
     // Update recent activity
     stats.recentActivity.unshift({
       score: gameResult.score,
-      difficulty: gameResult.difficulty,
+      difficulty: gameResult.difficulty.toUpperCase() as 'EASY' | 'MEDIUM' | 'HARD',
       time: gameResult.time,
       date: dateStr
     });
@@ -113,14 +161,12 @@ export const api = {
   } = {}) {
     const { difficulty, timeFilter = 'ALL', limit: limitCount = 50 } = options;
     
-    // Use a simpler query to avoid complex index requirements
     let q;
     if (difficulty) {
-      // Only use orderBy without the where clause to avoid index errors
       q = query(
         collection(db, 'users'),
         orderBy(`stats.byDifficulty.${difficulty.toLowerCase()}.avgScore`, 'desc'),
-        limit(limitCount * 3) // Fetch more to account for filtering
+        limit(limitCount * 3)
       );
     } else {
       q = query(
@@ -133,7 +179,7 @@ export const api = {
     const snapshot = await getDocs(q);
     const entries = snapshot.docs
       .map(doc => {
-        const data = doc.data();
+        const data = doc.data() as UserData;
         
         // Skip users with no stats
         if (!data.stats || !data.name) return null;
@@ -141,13 +187,13 @@ export const api = {
         // Apply difficulty filter in memory
         if (difficulty && 
             (!data.stats.byDifficulty || 
-             !data.stats.byDifficulty[difficulty.toLowerCase()] || 
-             data.stats.byDifficulty[difficulty.toLowerCase()].total <= 0)) {
+             !data.stats.byDifficulty[difficulty.toLowerCase() as 'easy' | 'medium' | 'hard'] || 
+             data.stats.byDifficulty[difficulty.toLowerCase() as 'easy' | 'medium' | 'hard'].total <= 0)) {
           return null;
         }
         
         const recentGames = Array.isArray(data.stats.recentActivity) 
-          ? data.stats.recentActivity.filter((game: any) => {
+          ? data.stats.recentActivity.filter((game: GameActivity) => {
               const matchesDifficulty = !difficulty || game.difficulty === difficulty;
               
               // Apply time filter
@@ -173,24 +219,26 @@ export const api = {
         if (recentGames.length === 0) return null;
 
         // Calculate average score for the time period
-        const avgScore = recentGames.reduce((sum: number, game: any) => sum + game.score, 0) / recentGames.length;
-        const bestGame = recentGames.reduce((best: any, game: any) => 
+        const avgScore = recentGames.reduce((sum, game) => sum + game.score, 0) / recentGames.length;
+        const bestGame = recentGames.reduce((best, game) => 
           (!best || game.score > best.score) ? game : best
-        , null);
+        , null as GameActivity | null);
 
-        return {
+        if (!bestGame) return null;
+
+        const entry: LeaderboardEntry = {
           id: doc.id,
           name: data.name,
-          score: difficulty ? data.stats.byDifficulty[difficulty.toLowerCase()].avgScore : avgScore,
-          highestScore: bestGame?.score || 0,
-          difficulty: difficulty || bestGame?.difficulty || 'ALL',
-          time: bestGame?.time || 0,
-          date: bestGame?.date || (data.updatedAt ? data.updatedAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+          score: difficulty ? data.stats.byDifficulty[difficulty.toLowerCase() as 'easy' | 'medium' | 'hard'].avgScore : avgScore,
+          highestScore: bestGame.score,
+          difficulty: difficulty || bestGame.difficulty || 'ALL',
+          time: bestGame.time,
+          date: bestGame.date || (data.updatedAt ? data.updatedAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
         };
+
+        return entry;
       })
-      .filter((entry): entry is NonNullable<typeof entry> => 
-        entry !== null
-      )
+      .filter((entry): entry is LeaderboardEntry => entry !== null)
       .sort((a, b) => {
         // Sort by score first, then by time (faster times are better)
         if (Math.abs(b.score - a.score) > 0.1) {
