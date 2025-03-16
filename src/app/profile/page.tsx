@@ -7,6 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/config/firebase';
+import { api } from '@/services/api';
 
 // Define types for our stats
 interface ActivityItem {
@@ -35,6 +36,7 @@ interface UserStats {
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
+  const [userRank, setUserRank] = useState<number | null>(null);
   const [chartFilter, setChartFilter] = useState({
     difficulty: "ALL",
     timeRange: "ALL"
@@ -106,6 +108,35 @@ export default function ProfilePage() {
     
     fetchUserStats();
   }, [user, setStats]);
+  
+  // Fetch user's global rank
+  useEffect(() => {
+    const fetchUserRank = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await api.getLeaderboard({
+          limit: 100 // Fetch a larger number to ensure we find the user
+        });
+        
+        // Sort by highestScore in descending order, then by time in ascending order for tiebreaks
+        // This matches exactly how the leaderboard page sorts entries
+        const sortedLeaderboard = [...response].sort((a, b) => {
+          if (b.highestScore !== a.highestScore) {
+            return b.highestScore - a.highestScore;
+          }
+          return a.time - b.time;
+        });
+        
+        const userIndex = sortedLeaderboard.findIndex(entry => entry.name === user.name);
+        setUserRank(userIndex !== -1 ? userIndex + 1 : null);
+      } catch (error) {
+        console.error('Error fetching leaderboard for rank:', error);
+      }
+    };
+    
+    fetchUserRank();
+  }, [user]);
   
   const calculatePercentage = (correct: number, total: number) => {
     return total > 0 ? Math.round((correct / total) * 100) : 0;
@@ -260,31 +291,33 @@ export default function ProfilePage() {
                   {/* Top row - Key stats */}
                   <div className="col-span-12 grid grid-cols-4 gap-6 mb-6">
                     <div className="swiss-card">
-                      <div className="swiss-label mb-2">Total Games</div>
-                      <div className="text-4xl font-bold">{stats.totalGames}</div>
-                    </div>
-                    
-                    <div className="swiss-card">
-                      <div className="swiss-label mb-2">Questions/Minute</div>
-                      <div className="text-4xl font-bold">
-                        {stats.totalTimePlayed > 0
-                          ? ((stats.totalScore / (stats.totalTimePlayed / 60))).toFixed(1)
-                          : 0}
-                      </div>
-                    </div>
-                    
-                    <div className="swiss-card">
-                      <div className="swiss-label mb-2">Accuracy</div>
-                      <div className="text-4xl font-bold">
-                        {stats.totalCorrect > 0 || stats.totalScore > 0
-                          ? calculatePercentage(stats.totalCorrect, stats.totalScore) + "%"
-                          : "0%"}
-                      </div>
-                    </div>
-                    
-                    <div className="swiss-card">
                       <div className="swiss-label mb-2">Highest Score</div>
                       <div className="text-4xl font-bold">{stats.highestScore}</div>
+                    </div>
+                    
+                    <div className="swiss-card">
+                      <div className="swiss-label mb-2">Global Rank</div>
+                      <div className="text-4xl font-bold">
+                        {userRank ? (
+                          <span>#{userRank}</span>
+                        ) : (
+                          <span className="text-white/60">-</span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="swiss-card">
+                      <div className="swiss-label mb-2">Average Score</div>
+                      <div className="text-4xl font-bold">
+                        {stats.totalGames > 0
+                          ? (stats.totalScore / stats.totalGames).toFixed(1)
+                          : "0.0"}
+                      </div>
+                    </div>
+                    
+                    <div className="swiss-card">
+                      <div className="swiss-label mb-2">Total Games</div>
+                      <div className="text-4xl font-bold">{stats.totalGames}</div>
                     </div>
                   </div>
                   

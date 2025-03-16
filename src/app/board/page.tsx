@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
-import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
-import { db } from '@/config/firebase';
+import { api } from '@/services/api';
+import { motion } from "framer-motion";
 
 interface Game {
   score: number;
@@ -17,6 +17,7 @@ interface LeaderboardEntry {
   id: string;
   name: string;
   score: number;
+  highestScore: number;
   difficulty: string;
   time: number;
   date: string;
@@ -26,8 +27,10 @@ export default function LeaderboardPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [userRank, setUserRank] = useState<number | null>(null);
   const [filter, setFilter] = useState({
     difficulty: "ALL",
+    timeFilter: "ALL",
     timeRange: "ALL"
   });
   
@@ -35,85 +38,23 @@ export default function LeaderboardPage() {
     const fetchLeaderboard = async () => {
       try {
         setLoading(true);
-        let q = query(
-          collection(db, 'users'),
-          orderBy('stats.highestScore', 'desc'),
-          limit(50)
-        );
-
-        if (filter.difficulty !== 'ALL') {
-          const difficultyPath = `stats.byDifficulty.${filter.difficulty.toLowerCase()}`;
-          q = query(
-            collection(db, 'users'),
-            orderBy(`${difficultyPath}.avgScore`, 'desc'),
-            limit(50)
-          );
-        }
-
-        const snapshot = await getDocs(q);
-        let leaderboardData = snapshot.docs.map(doc => {
-          const data = doc.data();
-          
-          // Handle potential missing data
-          if (!data.stats || !data.name) {
-            return null;
+        const response = await api.getLeaderboard({
+          difficulty: filter.difficulty !== "ALL" ? filter.difficulty as "EASY" | "MEDIUM" | "HARD" : undefined,
+          timeFilter: filter.timeFilter as "FAST" | "MEDIUM" | "SLOW" | "ALL",
+          limit: 10
+        });
+        
+        // Sort by highestScore in descending order, then by time in ascending order for tiebreaks
+        const sortedLeaderboard = [...response].sort((a, b) => {
+          if (b.highestScore !== a.highestScore) {
+            return b.highestScore - a.highestScore;
           }
-          
-          const difficultyLower = filter.difficulty.toLowerCase();
-          const diffStats = filter.difficulty !== 'ALL' && data.stats.byDifficulty && data.stats.byDifficulty[difficultyLower]
-            ? data.stats.byDifficulty[difficultyLower]
-            : null;
-            
-          // Find a recent game with the matching difficulty
-          const recentGames = Array.isArray(data.stats.recentActivity) ? data.stats.recentActivity : [];
-          const recentGame = recentGames.find((game: Game) => 
-            filter.difficulty === 'ALL' || game.difficulty === filter.difficulty
-          );
-          
-          // Default game data if no matching game found
-          const gameData = recentGame || {
-            score: diffStats?.avgScore || data.stats.highestScore || 0,
-            difficulty: filter.difficulty !== 'ALL' ? filter.difficulty : 'UNKNOWN',
-            time: 0,
-            date: data.updatedAt ? data.updatedAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-          };
-
-          return {
-            id: doc.id,
-            name: data.name,
-            score: filter.difficulty !== 'ALL' && diffStats ? diffStats.avgScore : (data.stats.highestScore || 0),
-            difficulty: gameData.difficulty,
-            time: gameData.time,
-            date: gameData.date
-          };
-        })
-        // Filter out null values and explicitly cast to LeaderboardEntry[] to satisfy TypeScript
-        .filter((entry): entry is LeaderboardEntry => entry !== null);
-
-        // Apply time range filter on the server side
-        if (filter.timeRange !== "ALL") {
-          const now = new Date();
-          const cutoffDate = new Date();
-          
-          switch(filter.timeRange) {
-            case "WEEK":
-              cutoffDate.setDate(now.getDate() - 7);
-              break;
-            case "MONTH":
-              cutoffDate.setMonth(now.getMonth() - 1);
-              break;
-            case "YEAR":
-              cutoffDate.setFullYear(now.getFullYear() - 1);
-              break;
-          }
-          
-          leaderboardData = leaderboardData.filter(entry => {
-            const entryDate = new Date(entry.date);
-            return entryDate >= cutoffDate;
-          });
-        }
-
-        setLeaderboard(leaderboardData);
+          return a.time - b.time;
+        });
+        
+        setLeaderboard(sortedLeaderboard);
+        const userIndex = sortedLeaderboard.findIndex(entry => entry.name === user?.name);
+        setUserRank(userIndex !== -1 ? userIndex + 1 : null);
       } catch (error) {
         console.error('Error fetching leaderboard:', error);
       } finally {
@@ -122,146 +63,253 @@ export default function LeaderboardPage() {
     };
 
     fetchLeaderboard();
-  }, [filter.difficulty, filter.timeRange]);
+  }, [filter.difficulty, filter.timeFilter, filter.timeRange, user?.name]);
   
-  // Define filteredLeaderboard from the leaderboard state
-  const filteredLeaderboard = leaderboard;
-  
-  const topThree = filteredLeaderboard.slice(0, 3);
-  const restOfLeaderboard = filteredLeaderboard.slice(3);
+  // Get top three players
+  const topThree = leaderboard.slice(0, 3);
+  // Ensure we have references to first, second, and third place
+  const firstPlace = topThree.length > 0 ? topThree[0] : null;
+  const secondPlace = topThree.length > 1 ? topThree[1] : null;
+  const thirdPlace = topThree.length > 2 ? topThree[2] : null;
+
+  const FilterButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
+    <button
+      onClick={onClick}
+      className={`px-3 py-1 text-xs uppercase tracking-wider transition-all duration-300 ${
+        active 
+          ? 'bg-[rgb(var(--primary))] text-black font-bold'
+          : 'bg-transparent border border-white/20 text-white hover:border-[rgb(var(--primary))]'
+      }`}
+    >
+      {children}
+    </button>
+  );
   
   return (
     <ProtectedRoute>
-      <div className="min-h-screen flex flex-col bg-black text-white">
+      <div className="h-screen flex flex-col bg-black text-white overflow-hidden">
         <Navbar />
         
         <main className="flex-1 flex items-start justify-center py-6">
-          <div className="swiss-container py-4">
-            <div className="mb-8">
-              <div className="swiss-divider mb-6"></div>
+          <div className="swiss-container max-w-7xl w-full py-4">
+            <div className="mb-6">
+              <div className="swiss-divider mb-4"></div>
               <p className="swiss-subtitle">Leaderboard Rankings</p>
+              {userRank && (
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="mt-2 text-sm text-white/60"
+                >
+                  Your Current Rank: <span className="text-[rgb(var(--primary))] font-bold">#{userRank}</span>
+                </motion.div>
+              )}
+            </div>
+            
+            <div className="flex gap-2 mb-8">
+              <FilterButton 
+                active={filter.difficulty === "ALL"}
+                onClick={() => setFilter({ ...filter, difficulty: "ALL" })}
+              >
+                All
+              </FilterButton>
+              <FilterButton 
+                active={filter.difficulty === "EASY"}
+                onClick={() => setFilter({ ...filter, difficulty: "EASY" })}
+              >
+                Easy
+              </FilterButton>
+              <FilterButton 
+                active={filter.difficulty === "MEDIUM"}
+                onClick={() => setFilter({ ...filter, difficulty: "MEDIUM" })}
+              >
+                Medium
+              </FilterButton>
+              <FilterButton 
+                active={filter.difficulty === "HARD"}
+                onClick={() => setFilter({ ...filter, difficulty: "HARD" })}
+              >
+                Hard
+              </FilterButton>
             </div>
             
             {loading ? (
-              <div className="flex justify-center items-center h-64">
-                <div className="text-2xl text-white/60">Loading leaderboard...</div>
-              </div>
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex-1 flex justify-center items-center h-[calc(100vh-280px)]"
+              >
+                <div className="swiss-loader"></div>
+              </motion.div>
+            ) : leaderboard.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex-1 flex flex-col items-center justify-center text-center h-[calc(100vh-280px)]"
+              >
+                <p className="text-2xl font-bold mb-4">No entries yet</p>
+                <p className="text-white/60">Be the first to make it to the leaderboard!</p>
+              </motion.div>
             ) : (
-              <div className="h-[calc(100vh-240px)] flex flex-col">
-                <div className="flex justify-between mb-8">
-                  <div className="flex space-x-4">
-                    <div className="relative">
-                      <select 
-                        value={filter.difficulty}
-                        onChange={(e) => setFilter({ ...filter, difficulty: e.target.value })}
-                        className="appearance-none bg-black border border-white/20 px-6 py-3 pr-12 text-sm uppercase tracking-wider focus:border-[rgb(var(--primary))] transition-colors"
-                      >
-                        <option value="ALL">All Difficulties</option>
-                        <option value="EASY">Easy</option>
-                        <option value="MEDIUM">Medium</option>
-                        <option value="HARD">Hard</option>
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
+              <div className="h-[calc(100vh-280px)]">
+                {/* Main Container */}
+                <div className="flex flex-col h-full">
+                  {/* Two Column Layout */}
+                  <div className="flex h-full rounded-lg overflow-hidden border border-white/10 backdrop-blur-sm bg-black/30 shadow-[0_0_25px_rgba(var(--primary),0.1)]">
+                    {/* Podium Section - Left */}
+                    <div className="w-[400px] border-r border-white/10 flex flex-col">
+                      <div className="p-4 border-b border-white/10 bg-black/50">
+                        <h2 className="text-xs uppercase tracking-wider font-medium text-white/70 flex items-center">
+                          <svg className="w-4 h-4 mr-2 text-[rgb(var(--primary))]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 15L8.5 10L15.5 10L12 15Z" fill="currentColor"/>
+                            <path d="M6 20V19H18V20H6Z" fill="currentColor"/>
+                            <path d="M7 9.5V4H9V9.5H7Z" fill="currentColor"/>
+                            <path d="M11 9.5V4H13V9.5H11Z" fill="currentColor"/>
+                            <path d="M15 9.5V4H17V9.5H15Z" fill="currentColor"/>
+                          </svg>
+                          Champions Podium
+                        </h2>
                       </div>
-                    </div>
-                    
-                    <div className="relative">
-                      <select 
-                        value={filter.timeRange}
-                        onChange={(e) => setFilter({ ...filter, timeRange: e.target.value })}
-                        className="appearance-none bg-black border border-white/20 px-6 py-3 pr-12 text-sm uppercase tracking-wider focus:border-[rgb(var(--primary))] transition-colors"
-                      >
-                        <option value="ALL">All Time</option>
-                        <option value="WEEK">This Week</option>
-                        <option value="MONTH">This Month</option>
-                        <option value="YEAR">This Year</option>
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-12 gap-8 h-[calc(100%-80px)]">
-                  {/* Top 3 Podium */}
-                  <div className="col-span-4">
-                    <div className="flex flex-col h-full">
-                      <h2 className="swiss-heading mb-6">Podium</h2>
-                      <div className="flex-1 flex items-end justify-center">
-                        <div className="flex items-end justify-center gap-6 w-full">
-                          {topThree[1] && (
-                            <div className="flex flex-col items-center">
-                              <div className="swiss-card bg-black/50 p-4 text-center mb-3">
-                                <div className="text-base font-bold mb-1">{topThree[1].name}</div>
-                                <div className="text-3xl font-bold text-[rgb(var(--primary))]">{topThree[1].score.toFixed(1)}</div>
+                      <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-b from-black/0 to-black/30">
+                        <div className="flex items-end gap-6">
+                          {/* Second Place - Left */}
+                          <div className="w-28 flex flex-col relative group order-1">
+                            <div className="absolute inset-0 bg-gradient-to-b from-[rgba(var(--primary),0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -m-1 rounded-lg"></div>
+                            <div className="bg-black border border-white/10 p-3 text-center mb-2 rounded-t-lg relative z-10">
+                              <div className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
                               </div>
-                              <div className="w-28 h-28 flex items-center justify-center bg-[rgb(var(--primary))]/5 border border-[rgb(var(--primary))]/20">
-                                <div className="text-4xl font-bold text-[rgb(var(--primary))]">2</div>
+                              <div className="text-sm font-bold leading-tight">
+                                {secondPlace ? (
+                                  <div className="truncate" title={secondPlace.name}>
+                                    {secondPlace.name.length > 12 
+                                      ? secondPlace.name.slice(0, 12) + '...' 
+                                      : secondPlace.name}
+                                  </div>
+                                ) : '-'}
                               </div>
+                              <div className="text-2xl font-bold text-[rgb(var(--primary))]">{secondPlace?.highestScore.toFixed(1) || '0.0'}</div>
+                              <div className="text-xs text-white/60">{secondPlace ? `${Math.round(secondPlace.time)}s` : '-'}</div>
                             </div>
-                          )}
-                          
-                          {topThree[0] && (
-                            <div className="flex flex-col items-center -mt-8">
-                              <div className="swiss-card bg-black/50 p-4 text-center mb-3">
-                                <div className="text-base font-bold mb-1">{topThree[0].name}</div>
-                                <div className="text-3xl font-bold text-[rgb(var(--primary))]">{topThree[0].score.toFixed(1)}</div>
-                              </div>
-                              <div className="w-32 h-32 flex items-center justify-center bg-[rgb(var(--primary))]/10 border border-[rgb(var(--primary))]/30">
-                                <div className="text-5xl font-bold text-[rgb(var(--primary))]">1</div>
-                              </div>
+                            <div className="h-[100px] bg-black border border-white/10 flex items-center justify-center relative z-10 rounded-b-lg">
+                              <div className="text-4xl font-bold text-white/80">2</div>
                             </div>
-                          )}
-                          
-                          {topThree[2] && (
-                            <div className="flex flex-col items-center mt-8">
-                              <div className="swiss-card bg-black/50 p-4 text-center mb-3">
-                                <div className="text-base font-bold mb-1">{topThree[2].name}</div>
-                                <div className="text-3xl font-bold text-[rgb(var(--primary))]">{topThree[2].score.toFixed(1)}</div>
-                              </div>
-                              <div className="w-24 h-24 flex items-center justify-center bg-[rgb(var(--primary))]/5 border border-[rgb(var(--primary))]/20">
-                                <div className="text-3xl font-bold text-[rgb(var(--primary))]">3</div>
-                              </div>
+                          </div>
+
+                          {/* First Place - Middle */}
+                          <div className="w-28 flex flex-col relative group z-20 order-2">
+                            <div className="absolute inset-0 bg-gradient-to-b from-[rgba(var(--primary),0.2)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -m-1 rounded-lg"></div>
+                            <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12">
+                              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[rgb(var(--primary))]">
+                                <path d="M12 4L14.5 9L20 10L16 14L17 19.5L12 17L7 19.5L8 14L4 10L9.5 9L12 4Z" fill="currentColor"/>
+                              </svg>
                             </div>
-                          )}
+                            <div className="bg-black border border-[rgb(var(--primary))]/30 p-3 text-center mb-2 rounded-t-lg relative z-10 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                              <div className="text-sm font-bold leading-tight">
+                                {firstPlace ? (
+                                  <div className="truncate" title={firstPlace.name}>
+                                    {firstPlace.name.length > 12 
+                                      ? firstPlace.name.slice(0, 12) + '...' 
+                                      : firstPlace.name}
+                                  </div>
+                                ) : '-'}
+                              </div>
+                              <div className="text-2xl font-bold text-[rgb(var(--primary))]">{firstPlace?.highestScore.toFixed(1) || '0.0'}</div>
+                              <div className="text-xs text-white/60">{firstPlace ? `${Math.round(firstPlace.time)}s` : '-'}</div>
+                            </div>
+                            <div className="h-[140px] bg-black border border-[rgb(var(--primary))]/30 flex items-center justify-center relative z-10 rounded-b-lg shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                              <div className="text-4xl font-bold text-[rgb(var(--primary))]">1</div>
+                            </div>
+                          </div>
+
+                          {/* Third Place - Right */}
+                          <div className="w-28 flex flex-col relative group order-3">
+                            <div className="absolute inset-0 bg-gradient-to-b from-[rgba(var(--primary),0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -m-1 rounded-lg"></div>
+                            <div className="bg-black border border-white/10 p-3 text-center mb-2 rounded-t-lg relative z-10">
+                              <div className="absolute -top-3 -right-3 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                              </div>
+                              <div className="text-sm font-bold leading-tight">
+                                {thirdPlace ? (
+                                  <div className="truncate" title={thirdPlace.name}>
+                                    {thirdPlace.name.length > 12 
+                                      ? thirdPlace.name.slice(0, 12) + '...' 
+                                      : thirdPlace.name}
+                                  </div>
+                                ) : '-'}
+                              </div>
+                              <div className="text-2xl font-bold text-[rgb(var(--primary))]">{thirdPlace?.highestScore.toFixed(1) || '0.0'}</div>
+                              <div className="text-xs text-white/60">{thirdPlace ? `${Math.round(thirdPlace.time)}s` : '-'}</div>
+                            </div>
+                            <div className="h-[80px] bg-black border border-white/10 flex items-center justify-center relative z-10 rounded-b-lg">
+                              <div className="text-4xl font-bold text-white/80">3</div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Leaderboard Table */}
-                  <div className="col-span-8">
-                    <h2 className="swiss-heading mb-6">Rankings</h2>
-                    <div className="h-[calc(100%-40px)] swiss-card">
-                      <table className="w-full">
-                        <thead>
-                          <tr className="border-b border-white/10">
-                            <th className="swiss-label text-left pb-4 w-16">Rank</th>
-                            <th className="swiss-label text-left pb-4">Name</th>
-                            <th className="swiss-label text-right pb-4 w-24">Score</th>
-                            <th className="swiss-label text-right pb-4 w-28">Difficulty</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {restOfLeaderboard.map((entry: LeaderboardEntry, index: number) => (
-                            <tr 
-                              key={entry.id} 
-                              className={`border-b border-white/5 ${user?.name === entry.name ? 'bg-white/5' : ''}`}
-                            >
-                              <td className="py-4 text-base">{index + 4}</td>
-                              <td className="py-4 text-base font-bold">{entry.name}</td>
-                              <td className="py-4 text-base text-right">{entry.score.toFixed(1)}</td>
-                              <td className="py-4 text-base text-right">{entry.difficulty}</td>
+
+                    {/* Table Section - Right */}
+                    <div className="flex-1 flex flex-col">
+                      <div className="p-4 border-b border-white/10 bg-black/50">
+                        <h2 className="text-xs uppercase tracking-wider font-medium text-white/70 flex items-center">
+                          <svg className="w-4 h-4 mr-2 text-[rgb(var(--primary))]" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 4H21V6H3V4Z" fill="currentColor"/>
+                            <path d="M3 11H21V13H3V11Z" fill="currentColor"/>
+                            <path d="M3 18H21V20H3V18Z" fill="currentColor"/>
+                          </svg>
+                          Global Rankings
+                        </h2>
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-black/50">
+                            <tr className="border-b border-white/10">
+                              <th className="text-left p-4 w-16 text-xs font-medium uppercase tracking-wider">#</th>
+                              <th className="text-left p-4 text-xs font-medium uppercase tracking-wider">Player</th>
+                              <th className="text-right p-4 w-32 text-xs font-medium uppercase tracking-wider">Score</th>
+                              <th className="text-right p-4 w-32 text-xs font-medium uppercase tracking-wider">Time</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {leaderboard.map((entry, index) => (
+                              <motion.tr 
+                                key={entry.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: index * 0.03 }}
+                                className={`border-b border-white/5 transition-all duration-300 hover:bg-[rgba(var(--primary),0.05)] ${
+                                  user?.name === entry.name 
+                                    ? 'bg-[rgba(var(--primary),0.1)]' 
+                                    : index % 2 === 0 ? 'bg-black/20' : 'bg-black/10'
+                                }`}
+                              >
+                                <td className="p-4 text-sm font-mono relative">
+                                  {index < 3 && (
+                                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-[rgb(var(--primary))]"></span>
+                                  )}
+                                  <span className={index < 3 ? "text-[rgb(var(--primary))] font-bold" : ""}>{index + 1}</span>
+                                </td>
+                                <td className="p-4 text-sm font-medium truncate">
+                                  {entry.name}
+                                  {user?.name === entry.name && (
+                                    <span className="ml-2 text-xs text-[rgb(var(--primary))]">(You)</span>
+                                  )}
+                                </td>
+                                <td className="p-4 text-sm text-right font-mono">{entry.highestScore.toFixed(1)}</td>
+                                <td className="p-4 text-sm text-right font-mono">{Math.round(entry.time)}s</td>
+                              </motion.tr>
+                            ))}
+                            
+                            {leaderboard.length < 10 && (
+                              <tr className="border-b border-white/5 bg-black/10">
+                                <td className="p-4 text-sm font-mono">{leaderboard.length + 1}</td>
+                                <td className="p-4 text-sm text-white/30">-</td>
+                                <td className="p-4 text-sm text-right text-white/30 font-mono">-</td>
+                                <td className="p-4 text-sm text-right text-white/30 font-mono">-</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>

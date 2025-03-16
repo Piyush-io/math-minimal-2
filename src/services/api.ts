@@ -108,40 +108,98 @@ export const api = {
 
   async getLeaderboard(options: {
     difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
-    timeRange?: 'WEEK' | 'MONTH' | 'YEAR' | 'ALL';
+    timeFilter?: 'FAST' | 'MEDIUM' | 'SLOW' | 'ALL';
     limit?: number;
   } = {}) {
-    const { difficulty, limit: limitCount = 50 } = options;
+    const { difficulty, timeFilter = 'ALL', limit: limitCount = 50 } = options;
     
-    let q = query(
-      collection(db, 'users'),
-      orderBy('stats.highestScore', 'desc'),
-      limit(limitCount)
-    );
-
+    // Use a simpler query to avoid complex index requirements
+    let q;
     if (difficulty) {
+      // Only use orderBy without the where clause to avoid index errors
       q = query(
-        q,
-        where(`stats.byDifficulty.${difficulty.toLowerCase()}.total`, '>', 0)
+        collection(db, 'users'),
+        orderBy(`stats.byDifficulty.${difficulty.toLowerCase()}.avgScore`, 'desc'),
+        limit(limitCount * 3) // Fetch more to account for filtering
+      );
+    } else {
+      q = query(
+        collection(db, 'users'),
+        orderBy('stats.highestScore', 'desc'),
+        limit(limitCount * 3)
       );
     }
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => {
-      const data = doc.data();
-      const recentGame = data.stats.recentActivity[0] || {
-        score: data.stats.highestScore,
-        difficulty: 'UNKNOWN',
-        time: 0,
-        date: data.updatedAt.toISOString().split('T')[0]
-      };
+    const entries = snapshot.docs
+      .map(doc => {
+        const data = doc.data();
+        
+        // Skip users with no stats
+        if (!data.stats || !data.name) return null;
+        
+        // Apply difficulty filter in memory
+        if (difficulty && 
+            (!data.stats.byDifficulty || 
+             !data.stats.byDifficulty[difficulty.toLowerCase()] || 
+             data.stats.byDifficulty[difficulty.toLowerCase()].total <= 0)) {
+          return null;
+        }
+        
+        const recentGames = Array.isArray(data.stats.recentActivity) 
+          ? data.stats.recentActivity.filter((game: any) => {
+              const matchesDifficulty = !difficulty || game.difficulty === difficulty;
+              
+              // Apply time filter
+              let matchesTimeFilter = true;
+              if (timeFilter !== 'ALL') {
+                switch(timeFilter) {
+                  case 'FAST':
+                    matchesTimeFilter = game.time <= 30;
+                    break;
+                  case 'MEDIUM':
+                    matchesTimeFilter = game.time > 30 && game.time <= 60;
+                    break;
+                  case 'SLOW':
+                    matchesTimeFilter = game.time > 60;
+                    break;
+                }
+              }
+              
+              return matchesDifficulty && matchesTimeFilter;
+            })
+          : [];
 
-      return {
-        id: doc.id,
-        name: data.name,
-        score: data.stats.highestScore,
-        ...recentGame
-      };
-    });
+        if (recentGames.length === 0) return null;
+
+        // Calculate average score for the time period
+        const avgScore = recentGames.reduce((sum: number, game: any) => sum + game.score, 0) / recentGames.length;
+        const bestGame = recentGames.reduce((best: any, game: any) => 
+          (!best || game.score > best.score) ? game : best
+        , null);
+
+        return {
+          id: doc.id,
+          name: data.name,
+          score: difficulty ? data.stats.byDifficulty[difficulty.toLowerCase()].avgScore : avgScore,
+          highestScore: bestGame?.score || 0,
+          difficulty: difficulty || bestGame?.difficulty || 'ALL',
+          time: bestGame?.time || 0,
+          date: bestGame?.date || (data.updatedAt ? data.updatedAt.toDate().toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+        };
+      })
+      .filter((entry): entry is NonNullable<typeof entry> => 
+        entry !== null
+      )
+      .sort((a, b) => {
+        // Sort by score first, then by time (faster times are better)
+        if (Math.abs(b.score - a.score) > 0.1) {
+          return b.score - a.score;
+        }
+        return a.time - b.time;
+      })
+      .slice(0, limitCount);
+
+    return entries;
   }
 };

@@ -63,6 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
+      // Validate inputs
+      if (!email || !password) {
+        throw new Error("Email and password are required");
+      }
+      
       const { user: firebaseUser } = await signInWithEmailAndPassword(auth, email, password);
       const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
       const userData = userDoc.data();
@@ -85,6 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (email: string, password: string, name: string) => {
     setLoading(true);
     try {
+      // Validate inputs
+      if (!email || !password || !name) {
+        throw new Error("Email, password, and name are required");
+      }
+      
+      if (password.length < 6) {
+        throw new Error("Password should be at least 6 characters");
+      }
+      
       const { user: firebaseUser } = await createUserWithEmailAndPassword(auth, email, password);
       
       // Update Firebase user profile

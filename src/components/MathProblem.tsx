@@ -24,9 +24,16 @@ const generateProblem = useCallback(() => {
   // Generate numbers based on difficulty, ensuring positive results
   switch (difficulty) {
     case "EASY":
-      n1 = Math.floor(Math.random() * 10) + 1; // 1-10
-      n2 = Math.floor(Math.random() * 10) + 1; // 1-10
-      op = "+";
+      // Introduce more multiplication and a wider range of numbers
+      if (Math.random() < 0.5) {
+        n1 = Math.floor(Math.random() * 10) + 1; // 1-10
+        n2 = Math.floor(Math.random() * 10) + 1; // 1-10
+        op = "+"; 
+      } else {
+        n1 = Math.floor(Math.random() * 10) + 1; // 1-10
+        n2 = Math.floor(Math.random() * 5) + 1; // 1-5
+        op = "*"; // Allow multiplication
+      }
       break;
     case "MEDIUM":
       if (Math.random() < 0.5) {
@@ -34,9 +41,9 @@ const generateProblem = useCallback(() => {
         n2 = Math.floor(Math.random() * 20) + 1; // 1-20
         op = "+";
       } else {
-        n1 = Math.floor(Math.random() * 5) + 1; // 1-5
-        n2 = Math.floor(Math.random() * 5) + 1; // 1-5
-        op = "*";
+        n1 = Math.floor(Math.random() * 10) + 1; // 1-10
+        n2 = Math.floor(Math.random() * 10) + 1; // 1-10
+        op = "*"; // Allow multiplication
       }
       break;
     case "HARD":
