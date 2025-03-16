@@ -98,6 +98,11 @@ export const api = {
     time: number;
     correct: boolean;
   }) {
+    // Validate score before proceeding
+    if (gameResult.score > 150) {
+      throw new Error('Invalid score: Score cannot exceed 150');
+    }
+
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     if (!userDoc.exists()) throw new Error('User not found');
@@ -181,8 +186,8 @@ export const api = {
       .map(doc => {
         const data = doc.data() as UserData;
         
-        // Skip users with no stats
-        if (!data.stats || !data.name) return null;
+        // Skip users with no stats or invalid scores
+        if (!data.stats || !data.name || data.stats.highestScore > 150) return null;
         
         // Apply difficulty filter in memory
         if (difficulty && 
@@ -194,6 +199,9 @@ export const api = {
         
         const recentGames = Array.isArray(data.stats.recentActivity) 
           ? data.stats.recentActivity.filter((game: GameActivity) => {
+              // Filter out invalid scores
+              if (game.score > 150) return false;
+
               const matchesDifficulty = !difficulty || game.difficulty === difficulty;
               
               // Apply time filter
