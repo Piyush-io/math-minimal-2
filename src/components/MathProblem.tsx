@@ -143,21 +143,21 @@ useEffect(() => {
   const displayOperator = operator === "*" ? "×" : operator;
   
   return (
-    <div className="flex flex-col items-center gap-8 w-full">
-      <div className="flex flex-col items-center gap-12 w-full">
-        <div className={`flex items-center justify-center ${isShaking ? 'animate-shake' : ''}`}>
-          <div className="math-problem">
+    <div className="w-full max-w-[600px] mx-auto">
+      <div className={`flex flex-col items-center justify-center ${isShaking ? 'animate-shake' : ''}`}>
+        <div className="flex items-center justify-center mb-8">
+          <div className="math-problem text-[80px] md:text-[120px]">
             {num1}
           </div>
-          <div className="math-operator">
+          <div className="math-operator text-[80px] md:text-[120px] mx-4 md:mx-8">
             {displayOperator}
           </div>
-          <div className="math-problem">
+          <div className="math-problem text-[80px] md:text-[120px]">
             {num2}
           </div>
         </div>
         
-        <div className="relative w-full max-w-[400px] px-4 mb-12">
+        <div className="relative w-full max-w-[300px] md:max-w-[400px] px-4 mb-8 md:mb-12">
           <Input
             ref={inputRef}
             type="text"
@@ -166,13 +166,13 @@ useEffect(() => {
             value={userAnswer}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            className={`relative w-full h-16 text-center text-7xl border-0 border-b-2 bg-transparent outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus:border-0 focus:shadow-none ${isCorrect ? 'border-[rgb(var(--primary))] text-[rgb(var(--primary))]' : 'border-white/20'}`}
+            className={`relative w-full h-12 md:h-16 text-center text-5xl md:text-7xl border-0 border-b-2 bg-transparent outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus:border-0 focus:shadow-none ${isCorrect ? 'border-[rgb(var(--primary))] text-[rgb(var(--primary))]' : 'border-white/20'}`}
             style={{ boxShadow: 'none' }}
             placeholder=""
             autoFocus
           />
-          <div className="absolute -bottom-8 left-0 w-full text-center">
-            <div className="swiss-label">Enter Answer</div>
+          <div className="absolute -bottom-6 md:-bottom-8 left-0 w-full text-center">
+            <div className="swiss-label text-xs md:text-sm">Enter Answer</div>
           </div>
         </div>
       </div>

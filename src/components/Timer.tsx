@@ -37,10 +37,10 @@ export default function Timer({ duration, onComplete }: TimerProps) {
   const percentLeft = (timeLeft / duration) * 100;
   
   return (
-    <div className="flex flex-col items-end">
+    <div className="flex flex-col items-center md:items-end">
       <div className="swiss-label mb-2">Time Remaining</div>
-      <div className="text-5xl font-bold tracking-tighter mb-4">{formattedTime}</div>
-      <div className="swiss-progress-container w-[200px]">
+      <div className="text-4xl md:text-5xl font-bold tracking-tighter mb-4">{formattedTime}</div>
+      <div className="swiss-progress-container w-[200px] md:w-[200px]">
         <div 
           className="swiss-progress-bar"
           style={{ width: `${percentLeft}%` }}

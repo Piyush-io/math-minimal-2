@@ -21,10 +21,10 @@ export default function TimeSelector({
   };
   
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-2 gap-2 md:gap-4">
       <button
         onClick={() => handleSelect(15)}
-        className={`font-bold tracking-wider px-6 py-3 transition-all duration-300 ${
+        className={`text-sm md:text-base font-bold tracking-wider px-3 md:px-6 py-2 md:py-3 transition-all duration-300 ${
           selectedTime === 15 
             ? "bg-[rgb(var(--primary))] text-black" 
             : "bg-transparent border border-white/30 hover:bg-white/10"
@@ -35,7 +35,7 @@ export default function TimeSelector({
       
       <button
         onClick={() => handleSelect(30)}
-        className={`font-bold tracking-wider px-6 py-3 transition-all duration-300 ${
+        className={`text-sm md:text-base font-bold tracking-wider px-3 md:px-6 py-2 md:py-3 transition-all duration-300 ${
           selectedTime === 30 
             ? "bg-[rgb(var(--primary))] text-black" 
             : "bg-transparent border border-white/30 hover:bg-white/10"
@@ -46,7 +46,7 @@ export default function TimeSelector({
       
       <button
         onClick={() => handleSelect(45)}
-        className={`font-bold tracking-wider px-6 py-3 transition-all duration-300 ${
+        className={`text-sm md:text-base font-bold tracking-wider px-3 md:px-6 py-2 md:py-3 transition-all duration-300 ${
           selectedTime === 45 
             ? "bg-[rgb(var(--primary))] text-black" 
             : "bg-transparent border border-white/30 hover:bg-white/10"
@@ -57,7 +57,7 @@ export default function TimeSelector({
       
       <button
         onClick={() => handleSelect(60)}
-        className={`font-bold tracking-wider px-6 py-3 transition-all duration-300 ${
+        className={`text-sm md:text-base font-bold tracking-wider px-3 md:px-6 py-2 md:py-3 transition-all duration-300 ${
           selectedTime === 60 
             ? "bg-[rgb(var(--primary))] text-black" 
             : "bg-transparent border border-white/30 hover:bg-white/10"

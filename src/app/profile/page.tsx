@@ -193,13 +193,13 @@ export default function ProfilePage() {
     
     return (
       <div className="h-[300px] w-full">
-        <div className="flex justify-between mb-4">
-          <div className="flex space-x-4">
+        <div className="flex flex-col sm:flex-row justify-between mb-4">
+          <div className="flex flex-wrap gap-2 sm:gap-4">
             <div className="relative">
               <select 
                 value={chartFilter.difficulty}
                 onChange={(e) => setChartFilter({ ...chartFilter, difficulty: e.target.value })}
-                className="appearance-none bg-black border border-white/20 px-4 py-2 pr-8 text-sm uppercase tracking-wider focus:border-[rgb(var(--primary))] transition-colors"
+                className="appearance-none bg-black border border-white/20 px-2 sm:px-4 py-1 sm:py-2 pr-6 sm:pr-8 text-xs sm:text-sm uppercase tracking-wider focus:border-[rgb(var(--primary))] transition-colors"
               >
                 <option value="ALL">All Difficulties</option>
                 <option value="EASY">Easy</option>
@@ -207,7 +207,7 @@ export default function ProfilePage() {
                 <option value="HARD">Hard</option>
               </select>
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
@@ -217,7 +217,7 @@ export default function ProfilePage() {
               <select 
                 value={chartFilter.timeRange}
                 onChange={(e) => setChartFilter({ ...chartFilter, timeRange: e.target.value })}
-                className="appearance-none bg-black border border-white/20 px-4 py-2 pr-8 text-sm uppercase tracking-wider focus:border-[rgb(var(--primary))] transition-colors"
+                className="appearance-none bg-black border border-white/20 px-2 sm:px-4 py-1 sm:py-2 pr-6 sm:pr-8 text-xs sm:text-sm uppercase tracking-wider focus:border-[rgb(var(--primary))] transition-colors"
               >
                 <option value="ALL">All Time</option>
                 <option value="WEEK">This Week</option>
@@ -225,7 +225,7 @@ export default function ProfilePage() {
                 <option value="YEAR">This Year</option>
               </select>
               <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="10" height="10" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>

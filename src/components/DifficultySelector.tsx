@@ -21,10 +21,10 @@ export default function DifficultySelector({
   };
   
   return (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 gap-2 md:gap-4">
       <button
         onClick={() => handleSelect("EASY")}
-        className={`uppercase font-bold tracking-wider px-6 py-3 transition-all duration-300 ${
+        className={`uppercase text-sm md:text-base font-bold tracking-wider px-4 md:px-6 py-2 md:py-3 transition-all duration-300 ${
           selectedDifficulty === "EASY" 
             ? "bg-[rgb(var(--primary))] text-black" 
             : "bg-transparent border border-white/30 hover:bg-white/10"
@@ -35,7 +35,7 @@ export default function DifficultySelector({
       
       <button
         onClick={() => handleSelect("MEDIUM")}
-        className={`uppercase font-bold tracking-wider px-6 py-3 transition-all duration-300 ${
+        className={`uppercase text-sm md:text-base font-bold tracking-wider px-4 md:px-6 py-2 md:py-3 transition-all duration-300 ${
           selectedDifficulty === "MEDIUM" 
             ? "bg-[rgb(var(--primary))] text-black" 
             : "bg-transparent border border-white/30 hover:bg-white/10"
@@ -46,7 +46,7 @@ export default function DifficultySelector({
       
       <button
         onClick={() => handleSelect("HARD")}
-        className={`uppercase font-bold tracking-wider px-6 py-3 transition-all duration-300 ${
+        className={`uppercase text-sm md:text-base font-bold tracking-wider px-4 md:px-6 py-2 md:py-3 transition-all duration-300 ${
           selectedDifficulty === "HARD" 
             ? "bg-[rgb(var(--primary))] text-black" 
             : "bg-transparent border border-white/30 hover:bg-white/10"

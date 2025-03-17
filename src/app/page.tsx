@@ -166,10 +166,10 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              <div className="swiss-grid h-[calc(100vh-240px)] items-center">
-                <div className="md:col-span-3 h-full flex flex-col justify-center">
-                  <div className="mb-16">
-                    <h2 className="swiss-label mb-8">Difficulty</h2>
+              <div className="swiss-grid h-auto md:h-[calc(100vh-240px)] items-center">
+                <div className="col-span-12 md:col-span-3 flex flex-col justify-center mb-8 md:mb-0">
+                  <div className="mb-8 md:mb-16">
+                    <h2 className="swiss-label mb-4 md:mb-8">Difficulty</h2>
                     <DifficultySelector 
                       onSelect={handleDifficultyChange} 
                       defaultDifficulty={difficulty} 
@@ -177,7 +177,7 @@ export default function Home() {
                   </div>
                   
                   <div>
-                    <h2 className="swiss-label mb-8">Time (seconds)</h2>
+                    <h2 className="swiss-label mb-4 md:mb-8">Time (seconds)</h2>
                     <TimeSelector 
                       onSelect={handleTimeChange} 
                       defaultTime={time} 
@@ -185,28 +185,28 @@ export default function Home() {
                   </div>
                 </div>
                 
-                <div className="md:col-span-6 flex flex-col items-center justify-center h-full">
+                <div className="col-span-12 md:col-span-6 flex flex-col items-center justify-center mb-8 md:mb-0">
                   <MathProblem 
                     difficulty={difficulty} 
                     onCorrectAnswer={handleCorrectAnswer} 
                   />
                 </div>
                 
-                <div className="md:col-span-3 h-full flex flex-col justify-between">
-                  <div className="flex justify-end">
+                <div className="col-span-12 md:col-span-3 flex flex-col justify-between mb-8 md:mb-0">
+                  <div className="flex justify-center md:justify-end w-full mb-8 md:mb-0">
                     {isPlaying ? (
                       <Timer 
                         duration={time} 
                         onComplete={handleTimerComplete} 
                       />
                     ) : (
-                      <div className="swiss-label mb-4">
+                      <div className="swiss-label mb-4 text-center md:text-right">
                         Input to start
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex justify-end mt-auto">
+                  <div className="flex justify-center md:justify-end mt-8 md:mt-auto">
                     <ScoreDisplay score={score} />
                   </div>
                 </div>
