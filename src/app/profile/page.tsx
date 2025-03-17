@@ -287,17 +287,17 @@ export default function ProfilePage() {
                   <p className="swiss-subtitle">{user?.name || "User"}'s Performance</p>
                 </div>
                 
-                <div className="grid grid-cols-12 gap-6 h-full">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 h-full overflow-y-auto">
                   {/* Top row - Key stats */}
-                  <div className="col-span-12 grid grid-cols-4 gap-6 mb-6">
+                  <div className="col-span-1 md:col-span-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
                     <div className="swiss-card">
                       <div className="swiss-label mb-2">Highest Score</div>
-                      <div className="text-4xl font-bold">{stats.highestScore}</div>
+                      <div className="text-3xl md:text-4xl font-bold">{stats.highestScore}</div>
                     </div>
                     
                     <div className="swiss-card">
                       <div className="swiss-label mb-2">Global Rank</div>
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl md:text-4xl font-bold">
                         {userRank ? (
                           <span>#{userRank}</span>
                         ) : (
@@ -308,7 +308,7 @@ export default function ProfilePage() {
                     
                     <div className="swiss-card">
                       <div className="swiss-label mb-2">Average Score</div>
-                      <div className="text-4xl font-bold">
+                      <div className="text-3xl md:text-4xl font-bold">
                         {stats.totalGames > 0
                           ? (stats.totalScore / stats.totalGames).toFixed(1)
                           : "0.0"}
@@ -317,49 +317,49 @@ export default function ProfilePage() {
                     
                     <div className="swiss-card">
                       <div className="swiss-label mb-2">Total Games</div>
-                      <div className="text-4xl font-bold">{stats.totalGames}</div>
+                      <div className="text-3xl md:text-4xl font-bold">{stats.totalGames}</div>
                     </div>
                   </div>
                   
                   {/* Bottom row - Charts and details */}
-                  <div className="col-span-12 grid grid-cols-12 gap-8 h-[calc(100%-120px)]">
+                  <div className="col-span-1 md:col-span-12 grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
                     {/* Score Growth Chart */}
-                    <div className="col-span-7 swiss-card">
-                      <h2 className="swiss-heading mb-8">Score Growth</h2>
+                    <div className="col-span-1 md:col-span-7 swiss-card">
+                      <h2 className="swiss-heading mb-4 md:mb-8">Score Growth</h2>
                       {renderScoreChart()}
                     </div>
                     
                     {/* Difficulty Stats */}
-                    <div className="col-span-3 swiss-card flex flex-col">
-                      <h2 className="swiss-heading mb-8">Difficulty</h2>
+                    <div className="col-span-1 md:col-span-3 swiss-card flex flex-col">
+                      <h2 className="swiss-heading mb-4 md:mb-8">Difficulty</h2>
                       <div className="space-y-6">
                         <div className="flex justify-between items-center">
                           <div className="swiss-label">Easy</div>
-                          <div className="text-2xl font-bold">{stats.byDifficulty.easy.avgScore}</div>
+                          <div className="text-xl md:text-2xl font-bold">{stats.byDifficulty.easy.avgScore}</div>
                         </div>
                         
                         <div className="flex justify-between items-center">
                           <div className="swiss-label">Medium</div>
-                          <div className="text-2xl font-bold">{stats.byDifficulty.medium.avgScore}</div>
+                          <div className="text-xl md:text-2xl font-bold">{stats.byDifficulty.medium.avgScore}</div>
                         </div>
                         
                         <div className="flex justify-between items-center">
                           <div className="swiss-label">Hard</div>
-                          <div className="text-2xl font-bold">{stats.byDifficulty.hard.avgScore}</div>
+                          <div className="text-xl md:text-2xl font-bold">{stats.byDifficulty.hard.avgScore}</div>
                         </div>
                       </div>
                     </div>
                     
                     {/* Recent Activity */}
-                    <div className="col-span-2 swiss-card flex flex-col">
-                      <h2 className="swiss-heading mb-8">Recent</h2>
+                    <div className="col-span-1 md:col-span-2 swiss-card flex flex-col">
+                      <h2 className="swiss-heading mb-4 md:mb-8">Recent</h2>
                       <div className="space-y-6">
                         {stats.recentActivity.length > 0 ? (
                           stats.recentActivity.slice(0, 3).map((activity, index) => (
                             <div key={index} className="swiss-card bg-black/50">
                               <div className="flex justify-between items-center">
                                 <div className="swiss-label">{activity.date}</div>
-                                <div className="text-2xl font-bold">{activity.score}</div>
+                                <div className="text-xl md:text-2xl font-bold">{activity.score}</div>
                               </div>
                               <div className="flex justify-between items-center mt-2">
                                 <div className="text-white/60">{activity.difficulty}</div>

@@ -97,11 +97,11 @@ export default function SettingsPage() {
                   </div>
                 )}
                 
-                <form onSubmit={handleSubmit} className="flex-1 grid grid-cols-12 gap-6">
-                  <div className="col-span-6">
-                    <h2 className="swiss-heading mb-4 text-2xl">Account</h2>
+                <form onSubmit={handleSubmit} className="flex-1 grid grid-cols-1 md:grid-cols-12 gap-6">
+                  <div className="col-span-1 md:col-span-6">
+                    <h2 className="swiss-heading mb-4 text-xl md:text-2xl">Account</h2>
                     
-                    <div className="grid grid-cols-2 gap-6 mb-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                       <div>
                         <label htmlFor="username" className="swiss-label block mb-2">
                           Username
@@ -136,7 +136,7 @@ export default function SettingsPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="swiss-btn py-3 px-8 mt-4"
+                      className="swiss-btn py-2 md:py-3 px-6 md:px-8 mt-4"
                     >
                       {loading ? "Saving..." : "Save Settings"}
                     </button>

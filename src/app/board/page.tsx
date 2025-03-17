@@ -105,7 +105,7 @@ export default function LeaderboardPage() {
       <div className="h-screen flex flex-col bg-black text-white overflow-hidden">
         <Navbar />
 
-        <main className="flex-1 flex items-start justify-center py-6">
+        <main className="flex-1 flex items-start justify-center py-6 overflow-y-auto">
           <div className="swiss-container max-w-7xl w-full py-4">
             <div className="mb-6">
               <div className="swiss-divider mb-4"></div>
@@ -124,7 +124,7 @@ export default function LeaderboardPage() {
               )}
             </div>
 
-            <div className="flex gap-2 mb-8">
+            <div className="flex flex-wrap gap-2 mb-8">
               <FilterButton
                 active={filter.difficulty === "ALL"}
                 onClick={() => setFilter({ ...filter, difficulty: "ALL" })}
@@ -155,7 +155,7 @@ export default function LeaderboardPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex-1 flex justify-center items-center h-[calc(100vh-280px)]"
+                className="flex-1 flex justify-center items-center min-h-[300px] md:h-[calc(100vh-280px)]"
               >
                 <div className="swiss-loader"></div>
               </motion.div>
@@ -163,7 +163,7 @@ export default function LeaderboardPage() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex-1 flex flex-col items-center justify-center text-center h-[calc(100vh-280px)]"
+                className="flex-1 flex flex-col items-center justify-center text-center min-h-[300px] md:h-[calc(100vh-280px)]"
               >
                 <p className="text-2xl font-bold mb-4">No entries yet</p>
                 <p className="text-white/60">
@@ -171,13 +171,13 @@ export default function LeaderboardPage() {
                 </p>
               </motion.div>
             ) : (
-              <div className="h-[calc(100vh-280px)]">
+              <div className="min-h-[300px] md:h-[calc(100vh-280px)]">
                 {/* Main Container */}
                 <div className="flex flex-col h-full">
-                  {/* Two Column Layout */}
-                  <div className="flex h-full rounded-lg overflow-hidden border border-white/10 backdrop-blur-sm bg-black/30 shadow-[0_0_25px_rgba(var(--primary),0.1)]">
-                    {/* Podium Section - Left */}
-                    <div className="w-[400px] border-r border-white/10 flex flex-col">
+                  {/* Two Column Layout - Stacks on mobile */}
+                  <div className="flex flex-col md:flex-row h-full rounded-lg overflow-hidden border border-white/10 backdrop-blur-sm bg-black/30 shadow-[0_0_25px_rgba(var(--primary),0.1)]">
+                    {/* Podium Section - Full width on mobile, fixed width on desktop */}
+                    <div className="w-full md:w-[400px] border-b md:border-b-0 md:border-r border-white/10 flex flex-col">
                       <div className="p-4 border-b border-white/10 bg-black/50">
                         <h2 className="text-xs uppercase tracking-wider font-medium text-white/70 flex items-center">
                           <svg
@@ -204,68 +204,68 @@ export default function LeaderboardPage() {
                           Champions Podium
                         </h2>
                       </div>
-                      <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-b from-black/0 to-black/30">
-                        <div className="flex items-end gap-6">
+                      <div className="flex-1 flex items-center justify-center p-4 md:p-8 bg-gradient-to-b from-black/0 to-black/30">
+                        <div className="flex items-end gap-3 md:gap-6">
                           {/* Second Place - Left */}
-                          <div className="w-28 flex flex-col relative group order-1">
+                          <div className="w-24 md:w-28 flex flex-col relative group order-1">
                             <div className="absolute inset-0 bg-gradient-to-b from-[rgba(var(--primary),0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -m-1 rounded-lg"></div>
-                            <div className="bg-black border border-white/10 p-3 text-center mb-2 rounded-t-lg relative z-10">
-                              <div className="text-sm font-bold leading-tight">
+                            <div className="bg-black border border-white/10 p-2 md:p-3 text-center mb-2 rounded-t-lg relative z-10">
+                              <div className="text-xs md:text-sm font-bold leading-tight">
                                 {secondPlace ? (
                                   <div className="truncate" title={secondPlace.name}>
-                                    {secondPlace.name.length > 12 
-                                      ? secondPlace.name.slice(0, 12) + '...' 
+                                    {secondPlace.name.length > 10 
+                                      ? secondPlace.name.slice(0, 10) + '...' 
                                       : secondPlace.name}
                                   </div>
                                 ) : '-'}
                               </div>
-                              <div className="text-2xl font-bold text-[rgb(var(--primary))]">{secondPlace?.highestScore.toFixed(1) || '0.0'}</div>
+                              <div className="text-xl md:text-2xl font-bold text-[rgb(var(--primary))]">{secondPlace?.highestScore.toFixed(1) || '0.0'}</div>
                               <div className="text-xs text-white/60">{secondPlace ? `${Math.round(secondPlace.time)}s` : '-'}</div>
                             </div>
-                            <div className="h-[100px] bg-black border border-white/10 flex items-center justify-center relative z-10 rounded-b-lg">
-                              <div className="text-4xl font-bold text-white/80">2</div>
+                            <div className="h-[80px] md:h-[100px] bg-black border border-white/10 flex items-center justify-center relative z-10 rounded-b-lg">
+                              <div className="text-3xl md:text-4xl font-bold text-white/80">2</div>
                             </div>
                           </div>
 
                           {/* First Place - Middle */}
-                          <div className="w-28 flex flex-col relative group z-20 order-2">
+                          <div className="w-24 md:w-28 flex flex-col relative group z-20 order-2">
                             <div className="absolute inset-0 bg-gradient-to-b from-[rgba(var(--primary),0.2)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -m-1 rounded-lg"></div>
-                            <div className="bg-black border border-[rgb(var(--primary))]/30 p-3 text-center mb-2 rounded-t-lg relative z-10 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
-                              <div className="text-sm font-bold leading-tight">
+                            <div className="bg-black border border-[rgb(var(--primary))]/30 p-2 md:p-3 text-center mb-2 rounded-t-lg relative z-10 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                              <div className="text-xs md:text-sm font-bold leading-tight">
                                 {firstPlace ? (
                                   <div className="truncate" title={firstPlace.name}>
-                                    {firstPlace.name.length > 12 
-                                      ? firstPlace.name.slice(0, 12) + '...' 
+                                    {firstPlace.name.length > 10 
+                                      ? firstPlace.name.slice(0, 10) + '...' 
                                       : firstPlace.name}
                                   </div>
                                 ) : '-'}
                               </div>
-                              <div className="text-2xl font-bold text-[rgb(var(--primary))]">{firstPlace?.highestScore.toFixed(1) || '0.0'}</div>
+                              <div className="text-xl md:text-2xl font-bold text-[rgb(var(--primary))]">{firstPlace?.highestScore.toFixed(1) || '0.0'}</div>
                               <div className="text-xs text-white/60">{firstPlace ? `${Math.round(firstPlace.time)}s` : '-'}</div>
                             </div>
-                            <div className="h-[140px] bg-black border border-[rgb(var(--primary))]/30 flex items-center justify-center relative z-10 rounded-b-lg shadow-[0_0_15px_rgba(var(--primary),0.2)]">
-                              <div className="text-4xl font-bold text-[rgb(var(--primary))]">1</div>
+                            <div className="h-[120px] md:h-[140px] bg-black border border-[rgb(var(--primary))]/30 flex items-center justify-center relative z-10 rounded-b-lg shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                              <div className="text-3xl md:text-4xl font-bold text-[rgb(var(--primary))]">1</div>
                             </div>
                           </div>
 
                           {/* Third Place - Right */}
-                          <div className="w-28 flex flex-col relative group order-3">
+                          <div className="w-24 md:w-28 flex flex-col relative group order-3">
                             <div className="absolute inset-0 bg-gradient-to-b from-[rgba(var(--primary),0.1)] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 -m-1 rounded-lg"></div>
-                            <div className="bg-black border border-white/10 p-3 text-center mb-2 rounded-t-lg relative z-10">
-                              <div className="text-sm font-bold leading-tight">
+                            <div className="bg-black border border-white/10 p-2 md:p-3 text-center mb-2 rounded-t-lg relative z-10">
+                              <div className="text-xs md:text-sm font-bold leading-tight">
                                 {thirdPlace ? (
                                   <div className="truncate" title={thirdPlace.name}>
-                                    {thirdPlace.name.length > 12 
-                                      ? thirdPlace.name.slice(0, 12) + '...' 
+                                    {thirdPlace.name.length > 10 
+                                      ? thirdPlace.name.slice(0, 10) + '...' 
                                       : thirdPlace.name}
                                   </div>
                                 ) : '-'}
                               </div>
-                              <div className="text-2xl font-bold text-[rgb(var(--primary))]">{thirdPlace?.highestScore.toFixed(1) || '0.0'}</div>
+                              <div className="text-xl md:text-2xl font-bold text-[rgb(var(--primary))]">{thirdPlace?.highestScore.toFixed(1) || '0.0'}</div>
                               <div className="text-xs text-white/60">{thirdPlace ? `${Math.round(thirdPlace.time)}s` : '-'}</div>
                             </div>
-                            <div className="h-[80px] bg-black border border-white/10 flex items-center justify-center relative z-10 rounded-b-lg">
-                              <div className="text-4xl font-bold text-white/80">3</div>
+                            <div className="h-[60px] md:h-[80px] bg-black border border-white/10 flex items-center justify-center relative z-10 rounded-b-lg">
+                              <div className="text-3xl md:text-4xl font-bold text-white/80">3</div>
                             </div>
                           </div>
                         </div>
@@ -273,7 +273,7 @@ export default function LeaderboardPage() {
                     </div>
 
                     {/* Table Section - Right */}
-                    <div className="flex-1 flex flex-col">
+                    <div className="flex-1 flex flex-col overflow-hidden">
                       <div className="p-4 border-b border-white/10 bg-black/50">
                         <h2 className="text-xs uppercase tracking-wider font-medium text-white/70 flex items-center">
                           <svg
@@ -289,86 +289,88 @@ export default function LeaderboardPage() {
                           Global Rankings
                         </h2>
                       </div>
-                      <div className="flex-1 overflow-hidden">
-                        <table className="w-full">
-                          <thead className="bg-black/50">
-                            <tr className="border-b border-white/10">
-                              <th className="text-left p-4 w-16 text-xs font-medium uppercase tracking-wider">
-                                #
-                              </th>
-                              <th className="text-left p-4 text-xs font-medium uppercase tracking-wider">
-                                Player
-                              </th>
-                              <th className="text-right p-4 w-32 text-xs font-medium uppercase tracking-wider">
-                                Score
-                              </th>
-                              <th className="text-right p-4 w-32 text-xs font-medium uppercase tracking-wider">
-                                Time
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {leaderboard.map((entry, index) => (
-                              <motion.tr
-                                key={entry.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: index * 0.03 }}
-                                className={`border-b border-white/5 transition-all duration-300 hover:bg-[rgba(var(--primary),0.05)] ${
-                                  user?.name === entry.name
-                                    ? "bg-[rgba(var(--primary),0.1)]"
-                                    : index % 2 === 0
-                                      ? "bg-black/20"
-                                      : "bg-black/10"
-                                }`}
-                              >
-                                <td className="p-4 text-sm font-mono relative">
-                                  {index < 3 && (
-                                    <span className="absolute left-0 top-0 bottom-0 w-1 bg-[rgb(var(--primary))]"></span>
-                                  )}
-                                  <span
-                                    className={
-                                      index < 3
-                                        ? "text-[rgb(var(--primary))] font-bold"
-                                        : ""
-                                    }
-                                  >
-                                    {index + 1}
-                                  </span>
-                                </td>
-                                <td className="p-4 text-sm font-medium truncate">
-                                  {entry.name}
-                                  {user?.name === entry.name && (
-                                    <span className="ml-2 text-xs text-[rgb(var(--primary))]">
-                                      (You)
-                                    </span>
-                                  )}
-                                </td>
-                                <td className="p-4 text-sm text-right font-mono">
-                                  {entry.highestScore.toFixed(1)}
-                                </td>
-                                <td className="p-4 text-sm text-right font-mono">
-                                  {Math.round(entry.time)}s
-                                </td>
-                              </motion.tr>
-                            ))}
-
-                            {leaderboard.length < 10 && (
-                              <tr className="border-b border-white/5 bg-black/10">
-                                <td className="p-4 text-sm font-mono">
-                                  {leaderboard.length + 1}
-                                </td>
-                                <td className="p-4 text-sm text-white/30">-</td>
-                                <td className="p-4 text-sm text-right text-white/30 font-mono">
-                                  -
-                                </td>
-                                <td className="p-4 text-sm text-right text-white/30 font-mono">
-                                  -
-                                </td>
+                      <div className="flex-1 overflow-auto scrollbar-hide">
+                        <div className="min-w-[500px] md:min-w-0">
+                          <table className="w-full">
+                            <thead className="bg-black/50">
+                              <tr className="border-b border-white/10">
+                                <th className="text-left p-2 md:p-4 w-10 md:w-16 text-xs font-medium uppercase tracking-wider">
+                                  #
+                                </th>
+                                <th className="text-left p-2 md:p-4 text-xs font-medium uppercase tracking-wider">
+                                  Player
+                                </th>
+                                <th className="text-right p-2 md:p-4 w-20 md:w-32 text-xs font-medium uppercase tracking-wider">
+                                  Score
+                                </th>
+                                <th className="text-right p-2 md:p-4 w-20 md:w-32 text-xs font-medium uppercase tracking-wider">
+                                  Time
+                                </th>
                               </tr>
-                            )}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {leaderboard.map((entry, index) => (
+                                <motion.tr
+                                  key={entry.id}
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  transition={{ delay: index * 0.03 }}
+                                  className={`border-b border-white/5 transition-all duration-300 hover:bg-[rgba(var(--primary),0.05)] ${
+                                    user?.name === entry.name
+                                      ? "bg-[rgba(var(--primary),0.1)]"
+                                      : index % 2 === 0
+                                        ? "bg-black/20"
+                                        : "bg-black/10"
+                                  }`}
+                                >
+                                  <td className="p-2 md:p-4 text-xs md:text-sm font-mono relative">
+                                    {index < 3 && (
+                                      <span className="absolute left-0 top-0 bottom-0 w-1 bg-[rgb(var(--primary))]"></span>
+                                    )}
+                                    <span
+                                      className={
+                                        index < 3
+                                          ? "text-[rgb(var(--primary))] font-bold"
+                                          : ""
+                                      }
+                                    >
+                                      {index + 1}
+                                    </span>
+                                  </td>
+                                  <td className="p-2 md:p-4 text-xs md:text-sm font-medium truncate max-w-[120px] md:max-w-none">
+                                    {entry.name}
+                                    {user?.name === entry.name && (
+                                      <span className="ml-2 text-xs text-[rgb(var(--primary))]">
+                                        (You)
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="p-2 md:p-4 text-xs md:text-sm text-right font-mono">
+                                    {entry.highestScore.toFixed(1)}
+                                  </td>
+                                  <td className="p-2 md:p-4 text-xs md:text-sm text-right font-mono">
+                                    {Math.round(entry.time)}s
+                                  </td>
+                                </motion.tr>
+                              ))}
+
+                              {leaderboard.length < 10 && (
+                                <tr className="border-b border-white/5 bg-black/10">
+                                  <td className="p-2 md:p-4 text-xs md:text-sm font-mono">
+                                    {leaderboard.length + 1}
+                                  </td>
+                                  <td className="p-2 md:p-4 text-xs md:text-sm text-white/30">-</td>
+                                  <td className="p-2 md:p-4 text-xs md:text-sm text-right text-white/30 font-mono">
+                                    -
+                                  </td>
+                                  <td className="p-2 md:p-4 text-xs md:text-sm text-right text-white/30 font-mono">
+                                    -
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     </div>
                   </div>

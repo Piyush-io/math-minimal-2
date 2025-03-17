@@ -200,8 +200,8 @@ export default function Home() {
                         onComplete={handleTimerComplete} 
                       />
                     ) : (
-                      <div className="swiss-label text-right">
-                        Enter any answer to start
+                      <div className="swiss-label mb-4">
+                        Input to start
                       </div>
                     )}
                   </div>

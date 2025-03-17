@@ -44,21 +44,22 @@ export default function LoginPage() {
   }
   
   return (
-    <div className="min-h-screen flex bg-black text-white">
-      <div className="w-1/2 h-screen flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen flex flex-col md:flex-row bg-black text-white">
+      <div className="w-full md:w-1/2 h-[40vh] md:h-screen flex items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 flex flex-col items-center justify-center z-10">
-          <div className="text-white text-[120px] font-bold leading-none relative">
+          <div className="text-white text-[60px] md:text-[120px] font-bold leading-none relative">
             <div className="flex justify-center mb-4">
               <Image
                 src="/Frame.png"
                 alt="Scribbles"
-                width={500}
-                height={500}
+                width={300}
+                height={300}
+                className="w-[200px] h-[200px] md:w-[500px] md:h-[500px]"
                 style={{ objectFit: "contain" }}
                 priority
               />
             </div>
-            <div>
+            <div className="text-center md:text-left">
               MATH.
               <br />
               MINIMAL
@@ -67,8 +68,8 @@ export default function LoginPage() {
         </div>
       </div>
       
-      <div className="w-1/2 h-screen flex items-center justify-center">
-        <div className="w-full max-w-[400px] px-8">
+      <div className="w-full md:w-1/2 min-h-[60vh] md:h-screen flex items-center justify-center">
+        <div className="w-full max-w-[400px] px-4 md:px-8 py-8 md:py-0">
           <LoginForm 
             onLogin={handleLogin}
             onSignup={handleSignup}
